@@ -17,6 +17,7 @@ import com.tiendaonline.clientes.exceptions.PedidosUnavailableException;
 import com.tiendaonline.clientes.flags.FeatureFlags;
 import com.tiendaonline.clientes.integration.PedidosClient;
 import com.tiendaonline.clientes.mapper.ClientMapper;
+import com.tiendaonline.clientes.observability.ClientMetrics;
 import com.tiendaonline.clientes.repositories.ClientRepository;
 import com.tiendaonline.clientes.services.utils.PiiMasker;
 
@@ -29,14 +30,16 @@ public class ClientServiceImpl implements ClientService {
     private FeatureFlags flags;
     private PiiMasker masker;
     private PedidosClient pedidosClient;
+    private ClientMetrics metrics;
 
     @Autowired
     ClientServiceImpl(ClientRepository repository, FeatureFlags flags, PiiMasker masker,
-            PedidosClient pedidosClient) {
+            PedidosClient pedidosClient, ClientMetrics metrics) {
         this.clientRepository = repository;
         this.flags = flags;
         this.masker = masker;
         this.pedidosClient = pedidosClient;
+        this.metrics = metrics;
     }
 
     @Override
@@ -46,6 +49,7 @@ public class ClientServiceImpl implements ClientService {
         if (clientRepository.existsByEmail(normalized.getEmail())) throw new DuplicatedEmailException();
         try {
             ClientDTO created = ClientMapper.toDto(clientRepository.save(ClientMapper.toEntity(normalized)));
+            metrics.created();
             log.info("Client registered clientId={}", created.getId());
             return created;
         } catch (DataIntegrityViolationException ex) {
@@ -55,8 +59,13 @@ public class ClientServiceImpl implements ClientService {
 
     @Override
     public ClientDTO searchById(Long id) throws ClientNotFoundException {
-        ClientDTO client = clientRepository.findById(id).map(ClientMapper::toDto)
-                .orElseThrow(ClientNotFoundException::new);
+        ClientDTO client = clientRepository.findById(id).map(ClientMapper::toDto).orElse(null);
+        if (client == null) {
+            metrics.notFound();
+            log.warn("Client not found clientId={}", id);
+            throw new ClientNotFoundException();
+        }
+        metrics.found();
         if (flags.isMaskPiiEnabled()) client = masker.maskClient(client);
         return client;
     }
