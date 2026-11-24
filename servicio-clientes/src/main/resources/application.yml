@@ -18,3 +18,6 @@ spring:
 
 feature-flags:
   mask-pii: true      # valor del modo local
+
+pedidos:
+  base-url: ${PEDIDOS_BASE_URL:http://localhost:8083}
