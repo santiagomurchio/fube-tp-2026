@@ -13,3 +13,4 @@ HELP.md
 bin/
 
 .claude/
+logs/

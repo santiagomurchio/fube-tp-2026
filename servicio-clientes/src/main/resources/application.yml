@@ -21,3 +21,15 @@ feature-flags:
 
 pedidos:
   base-url: ${PEDIDOS_BASE_URL:http://localhost:8083}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+loki:
+  url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
