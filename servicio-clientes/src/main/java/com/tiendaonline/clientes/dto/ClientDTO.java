@@ -4,6 +4,7 @@ import java.time.Instant;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,6 +27,7 @@ public class ClientDTO {
     private String surname;
 
     @NotBlank
+    @Email
     private String email;
 
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)

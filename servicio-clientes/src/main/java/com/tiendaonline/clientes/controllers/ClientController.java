@@ -1,6 +1,7 @@
 package com.tiendaonline.clientes.controllers;
 
 import java.net.URI;
+import java.util.List;
 
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import com.tiendaonline.clientes.dto.ClientDTO;
+import com.tiendaonline.clientes.dto.PedidoDTO;
 import com.tiendaonline.clientes.services.ClientService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,7 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/clients")
+@RequestMapping("/api/v1/clientes")
 @Tag(name = "Clients")
 public class ClientController {
 
@@ -60,5 +62,19 @@ public class ClientController {
     })
     public ClientDTO findById(@PathVariable Long id) {
         return service.searchById(id);
+    }
+
+    @GetMapping("/{id}/pedidos")
+    @Operation(summary = "List the orders of a client",
+            description = "Queries servicio-pedidos synchronously")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Orders of the client (may be empty)"),
+            @ApiResponse(responseCode = "404", description = "Non-existent client",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class))),
+            @ApiResponse(responseCode = "503", description = "servicio-pedidos is unavailable",
+                    content = @Content(schema = @Schema(implementation = ProblemDetail.class)))
+    })
+    public List<PedidoDTO> findOrders(@PathVariable Long id) {
+        return service.searchOrders(id);
     }
 }
