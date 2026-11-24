@@ -33,3 +33,6 @@ management:
 
 loki:
   url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
+
+statsig:
+  key: ${STATSIG_SERVER_KEY:}
