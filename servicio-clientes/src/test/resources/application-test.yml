@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    # H2 no acepta la sintaxis PostgreSQL de V1 (PRIMARY KEY DEFAULT ...), asi que se precrea
+    # el estado equivalente a V1 y Flyway lo toma como baseline: V2 y V3 corren de verdad.
+    url: "jdbc:h2:mem:clientes;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;INIT=CREATE TABLE IF NOT EXISTS clientes (id UUID DEFAULT random_uuid() PRIMARY KEY, nombre VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL UNIQUE, fecha_alta TIMESTAMP NOT NULL DEFAULT now())"
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  flyway:
+    baseline-on-migrate: true
+    baseline-version: 1
+
+pedidos:
+  base-url: http://localhost:1080

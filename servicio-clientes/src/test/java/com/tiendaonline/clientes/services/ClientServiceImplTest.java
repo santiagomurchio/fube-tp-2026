@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
@@ -15,7 +16,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.dao.DataIntegrityViolationException;
+
 import com.tiendaonline.clientes.dto.ClientDTO;
+import com.tiendaonline.clientes.dto.PedidoDTO;
+import com.tiendaonline.clientes.exceptions.PedidosUnavailableException;
+import com.tiendaonline.clientes.integration.PedidosClient;
 import com.tiendaonline.clientes.entities.Client;
 import com.tiendaonline.clientes.exceptions.ClientNotFoundException;
 import com.tiendaonline.clientes.exceptions.DuplicatedEmailException;
@@ -32,6 +38,8 @@ public class ClientServiceImplTest {
     PiiMasker masker;
     @Mock
     ClientRepository repository;
+    @Mock
+    PedidosClient pedidosClient;
     @InjectMocks
     ClientServiceImpl service;
 
@@ -97,6 +105,49 @@ public class ClientServiceImplTest {
 
         assertEquals(getSavedTestSubjectDTO(), result);
         verify(repository).save(getUnsavedTestSubjectEntity());
+    }
+
+    @Test
+    void registerClient_normalizesEmailToLowerCase() {
+        ClientDTO input = getUnsavedTestSubjectDTO().toBuilder().email("  Test@Test.TEST ").build();
+        when(repository.save(getUnsavedTestSubjectEntity())).thenReturn(getSavedTestSubjectEntity());
+
+        service.registerClient(input);
+
+        verify(repository).existsByEmail("test@test.test");
+        verify(repository).save(getUnsavedTestSubjectEntity());
+    }
+
+    @Test
+    void registerClient_uniqueConstraintRace_throwsDuplicatedEmail() {
+        when(repository.save(any(Client.class))).thenThrow(new DataIntegrityViolationException("dup"));
+
+        assertThrows(DuplicatedEmailException.class, () -> service.registerClient(getUnsavedTestSubjectDTO()));
+    }
+
+    @Test
+    void searchOrders_returnsOrdersFromPedidosService() {
+        PedidoDTO pedido = new PedidoDTO(10L, 1L, "CREADO", null, null, null, List.of());
+        when(repository.existsById(1L)).thenReturn(true);
+        when(pedidosClient.findByClientId(1L)).thenReturn(List.of(pedido));
+
+        assertEquals(List.of(pedido), service.searchOrders(1L));
+    }
+
+    @Test
+    void searchOrders_unknownClient_throwsNotFoundWithoutCallingPedidos() {
+        when(repository.existsById(1L)).thenReturn(false);
+
+        assertThrows(ClientNotFoundException.class, () -> service.searchOrders(1L));
+        verify(pedidosClient, never()).findByClientId(any());
+    }
+
+    @Test
+    void searchOrders_pedidosDown_propagatesUnavailable() {
+        when(repository.existsById(1L)).thenReturn(true);
+        when(pedidosClient.findByClientId(1L)).thenThrow(new PedidosUnavailableException(new RuntimeException()));
+
+        assertThrows(PedidosUnavailableException.class, () -> service.searchOrders(1L));
     }
 
 }
