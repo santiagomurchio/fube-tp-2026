@@ -3,7 +3,6 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
     <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="servicio-clientes"/>
-    <springProperty scope="context" name="LOKI_URL" source="loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
 
     <!-- Consola: texto legible con el traceId de cada request -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
@@ -30,22 +29,4 @@
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="JSON_FILE"/>
     </root>
-
-    <!-- Loki: push por HTTP, solo con el perfil "loki". Labels: app, host y level -->
-    <springProfile name="loki">
-        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-            <http>
-                <url>${LOKI_URL}</url>
-            </http>
-            <format>
-                <label>
-                    <pattern>app=${APP_NAME},host=${HOSTNAME},level=%level</pattern>
-                </label>
-                <message class="com.github.loki4j.logback.JsonLayout"/>
-            </format>
-        </appender>
-        <root level="INFO">
-            <appender-ref ref="LOKI"/>
-        </root>
-    </springProfile>
 </configuration>

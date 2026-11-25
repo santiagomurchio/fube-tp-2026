@@ -22,7 +22,6 @@ import com.tiendaonline.clientes.dto.ClientDTO;
 import com.tiendaonline.clientes.dto.PedidoDTO;
 import com.tiendaonline.clientes.exceptions.PedidosUnavailableException;
 import com.tiendaonline.clientes.integration.PedidosClient;
-import com.tiendaonline.clientes.observability.ClientMetrics;
 import com.tiendaonline.clientes.entities.Client;
 import com.tiendaonline.clientes.exceptions.ClientNotFoundException;
 import com.tiendaonline.clientes.exceptions.DuplicatedEmailException;
@@ -41,8 +40,6 @@ public class ClientServiceImplTest {
     ClientRepository repository;
     @Mock
     PedidosClient pedidosClient;
-    @Mock
-    ClientMetrics metrics;
     @InjectMocks
     ClientServiceImpl service;
 
@@ -151,31 +148,5 @@ public class ClientServiceImplTest {
         when(pedidosClient.findByClientId(1L)).thenThrow(new PedidosUnavailableException(new RuntimeException()));
 
         assertThrows(PedidosUnavailableException.class, () -> service.searchOrders(1L));
-    }
-
-    @Test
-    void searchById_recordsNotFoundMetric() {
-        when(repository.findById(1L)).thenReturn(Optional.empty());
-
-        assertThrows(ClientNotFoundException.class, () -> service.searchById(1L));
-        verify(metrics).notFound();
-    }
-
-    @Test
-    void searchById_recordsFoundMetric() {
-        when(repository.findById(1L)).thenReturn(Optional.of(getSavedTestSubjectEntity()));
-
-        service.searchById(1L);
-
-        verify(metrics).found();
-    }
-
-    @Test
-    void registerClient_recordsCreatedMetric() {
-        when(repository.save(getUnsavedTestSubjectEntity())).thenReturn(getSavedTestSubjectEntity());
-
-        service.registerClient(getUnsavedTestSubjectDTO());
-
-        verify(metrics).created();
     }
 }

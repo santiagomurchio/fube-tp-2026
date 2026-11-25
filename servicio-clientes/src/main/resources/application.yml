@@ -29,10 +29,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
-
-loki:
-  url: ${LOKI_URL:http://localhost:3100/loki/api/v1/push}
+        include: health,info
 
 statsig:
   key: ${STATSIG_SERVER_KEY:}
